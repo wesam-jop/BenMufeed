@@ -1,0 +1,6 @@
+@import './pos.css';
+@import './invoices.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
