@@ -1,0 +1,149 @@
+﻿%% Kasher — Full Database ERD (67 tables, 10 domains)
+erDiagram
+    %% Core / Auth
+    users ||--o{ passkeys : has
+    users ||--o{ sessions : has
+    users ||--o{ audit_logs : writes
+    users ||--o{ approval_requests : requests
+    roles ||--o{ model_has_roles : assigned
+    permissions ||--o{ model_has_permissions : granted
+    roles ||--o{ role_has_permissions : includes
+    permissions ||--o{ role_has_permissions : included
+
+    %% Organization
+    branches ||--o{ users : employs
+    branches ||--o{ audit_logs : scoped
+
+    %% Customers
+    customers ||--o{ customer_addresses : has
+    customers ||--o{ customer_favorites : saves
+    customers ||--o{ loyalty_transactions : earns
+    branches ||--o{ delivery_zones : serves
+
+    %% Catalog
+    branches ||--o{ product_categories : has
+    product_categories ||--o{ product_categories : parent
+    product_categories ||--o{ products : contains
+    units ||--o{ products : measures
+    tax_rates ||--o{ products : taxes
+    products ||--o{ product_variants : has
+    products ||--o{ product_modifier_groups : uses
+    modifier_groups ||--o{ product_modifier_groups : applied
+    modifier_groups ||--o{ modifier_options : has
+    products ||--o{ modifier_options : linked
+    products ||--o{ recipes : produces
+    product_variants ||--o{ recipes : variant
+    recipes ||--o{ recipe_items : contains
+    products ||--o{ recipe_items : ingredient
+    units ||--o{ recipe_items : unit
+    products ||--o{ customer_favorites : favorited
+
+    %% Inventory
+    branches ||--o{ warehouses : has
+    warehouses ||--o{ stock_batches : holds
+    warehouses ||--o{ stock_balances : stores
+    warehouses ||--o{ stock_movements : tracks
+    warehouses ||--o{ stock_counts : counts
+    warehouses ||--o{ wastage_records : wastes
+    products ||--o{ stock_batches : batched
+    products ||--o{ stock_balances : balanced
+    products ||--o{ stock_movements : moved
+    stock_batches ||--o{ stock_movements : from_batch
+    users ||--o{ stock_movements : records
+    branches ||--o{ stock_movements : branch
+    stock_transfers ||--o{ stock_transfer_items : contains
+    products ||--o{ stock_transfer_items : item
+    users ||--o{ stock_transfers : requests
+    stock_counts ||--o{ stock_count_items : contains
+    products ||--o{ stock_count_items : item
+    users ||--o{ wastage_records : records
+    products ||--o{ wastage_records : wasted
+    stock_movements ||--o{ wastage_records : linked
+
+    %% Purchasing
+    branches ||--o{ purchase_orders : places
+    suppliers ||--o{ purchase_orders : receives
+    purchase_orders ||--o{ purchase_order_items : contains
+    products ||--o{ purchase_order_items : item
+    users ||--o{ purchase_orders : creates
+    branches ||--o{ purchase_invoices : receives
+    suppliers ||--o{ purchase_invoices : bills
+    warehouses ||--o{ purchase_invoices : warehouse
+    purchase_orders ||--o{ purchase_invoices : converts
+    purchase_invoices ||--o{ purchase_invoice_items : contains
+    products ||--o{ purchase_invoice_items : item
+    users ||--o{ purchase_invoices : creates
+    suppliers ||--o{ supplier_payments : paid
+    purchase_invoices ||--o{ supplier_payments : settled
+    users ||--o{ supplier_payments : records
+
+    %% Sales / POS
+    branches ||--o{ cash_registers : has
+    cash_registers ||--o{ cash_register_sessions : sessions
+    users ||--o{ cash_register_sessions : opens
+    cash_register_sessions ||--o{ cash_movements : moves
+    cash_register_sessions ||--o{ payments : collects
+    cash_register_sessions ||--o{ expenses : pays
+    branches ||--o{ restaurant_tables : has
+    restaurant_tables ||--o{ table_sessions : sessions
+    table_sessions ||--o{ orders : serves
+    branches ||--o{ orders : receives
+    customers ||--o{ orders : places
+    users ||--o{ orders : creates
+    orders ||--o{ order_items : contains
+    products ||--o{ order_items : sold
+    product_variants ||--o{ order_items : variant
+    orders ||--o| invoices : generates
+    branches ||--o{ invoices : issues
+    customers ||--o{ invoices : billed
+    users ||--o{ invoices : cashier
+    invoices ||--o{ invoice_items : contains
+    products ||--o{ invoice_items : sold
+    product_variants ||--o{ invoice_items : variant
+    invoices ||--o{ payments : paid_by
+    payments ||--o{ payment_splits : splits
+    invoices ||--o{ refunds : refunded
+    users ||--o{ refunds : processes
+    stock_movements ||--o{ refunds : restores
+
+    %% Manufacturing
+    branches ||--o{ production_orders : runs
+    products ||--o{ production_orders : output
+    warehouses ||--o{ production_orders : warehouse
+    users ||--o{ production_orders : operator
+    production_orders ||--o{ production_order_items : consumes
+    products ||--o{ production_order_items : input
+
+    %% Accounting
+    chart_of_accounts ||--o{ chart_of_accounts : parent
+    branches ||--o{ accounting_periods : has
+    accounting_periods ||--o{ journal_entries : spans
+    branches ||--o{ journal_entries : posts
+    users ||--o{ journal_entries : author
+    journal_entries ||--o| journal_entries : reverses
+    journal_entries ||--o{ journal_entry_lines : has
+    chart_of_accounts ||--o{ journal_entry_lines : account
+    branches ||--o{ expenses : records
+    chart_of_accounts ||--o{ expenses : account
+    users ||--o{ expenses : author
+
+    %% CMS / Site (standalone — no FK)
+    site_settings {
+        bigint id PK
+    }
+    contact_messages {
+        bigint id PK
+    }
+    cms_pages {
+        bigint id PK
+        string path
+        string locale
+    }
+    currencies {
+        bigint id PK
+        string code
+    }
+    order_otp_verifications {
+        bigint id PK
+        string phone
+    }

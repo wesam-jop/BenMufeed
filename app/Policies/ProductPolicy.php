@@ -3,32 +3,15 @@
 namespace App\Policies;
 
 use App\Models\Product;
-use App\Models\User;
+use App\Policies\Concerns\ChecksPermissions;
+use Illuminate\Database\Eloquent\Model;
 
 class ProductPolicy
 {
-    public function viewAny(User $user): bool
-    {
-        return $user->is_admin;
-    }
+    use ChecksPermissions;
 
-    public function view(User $user, Product $product): bool
+    protected function permissionPrefix(): string
     {
-        return $user->is_admin;
-    }
-
-    public function create(User $user): bool
-    {
-        return $user->is_admin;
-    }
-
-    public function update(User $user, Product $product): bool
-    {
-        return $user->is_admin;
-    }
-
-    public function delete(User $user, Product $product): bool
-    {
-        return $user->is_admin;
+        return 'products';
     }
 }

@@ -2,37 +2,66 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Customer extends Model
+#[Hidden(['password', 'remember_token'])]
+class Customer extends Authenticatable
 {
+    use Notifiable;
+
+    protected $guard = 'customer';
+
     protected $fillable = [
-        'name',
         'phone',
-        'notes',
+        'name',
+        'email',
+        'password',
+        'whatsapp',
+        'loyalty_points',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
+            'password' => 'hashed',
+            'loyalty_points' => 'integer',
             'is_active' => 'boolean',
         ];
     }
 
-    public function purchaseInvoices(): HasMany
+    public function addresses(): HasMany
     {
-        return $this->hasMany(PurchaseInvoice::class);
+        return $this->hasMany(CustomerAddress::class);
     }
 
-    public function salesInvoices(): HasMany
+    public function favorites(): BelongsToMany
     {
-        return $this->hasMany(SalesInvoice::class);
+        return $this->belongsToMany(Product::class, 'customer_favorites')
+            ->using(CustomerFavorite::class);
     }
 
-    public function financialMovements(): HasMany
+    public function loyaltyTransactions(): HasMany
     {
-        return $this->hasMany(FinancialMovement::class);
+        return $this->hasMany(LoyaltyTransaction::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function hasPassword(): bool
+    {
+        return filled($this->getAttributes()['password'] ?? null);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
     }
 }

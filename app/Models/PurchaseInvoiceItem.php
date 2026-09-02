@@ -9,30 +9,32 @@ class PurchaseInvoiceItem extends Model
 {
     protected $fillable = [
         'purchase_invoice_id',
-        'material_id',
-        'material_name',
-        'unit',
+        'product_id',
         'quantity',
         'unit_price',
-        'line_total',
+        'discount',
+        'tax',
+        'total',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'decimal:3',
-            'unit_price' => 'decimal:2',
-            'line_total' => 'decimal:2',
+            'quantity' => 'decimal:4',
+            'unit_price' => 'decimal:4',
+            'discount' => 'decimal:2',
+            'tax' => 'decimal:2',
+            'total' => 'decimal:2',
         ];
     }
 
-    public function invoice(): BelongsTo
+    public function purchaseInvoice(): BelongsTo
     {
-        return $this->belongsTo(PurchaseInvoice::class, 'purchase_invoice_id');
+        return $this->belongsTo(PurchaseInvoice::class);
     }
 
-    public function material(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(Material::class);
+        return $this->belongsTo(Product::class);
     }
 }

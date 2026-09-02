@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Riyadh'),
 
     /*
     |--------------------------------------------------------------------------
@@ -78,9 +78,9 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'ar'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'ar'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
@@ -101,7 +101,7 @@ return [
 
     'previous_keys' => [
         ...array_filter(
-            explode(',', (string) env('APP_PREVIOUS_KEYS', ''))
+            explode(',', (string) env('APP_PREVIOUS_KEYS', '')),
         ),
     ],
 
@@ -114,7 +114,7 @@ return [
     | manage Laravel's "maintenance mode" status. The "cache" driver will
     | allow maintenance mode to be controlled across multiple machines.
     |
-    | Supported drivers: "file", "cache"
+    | Supported drivers: "file", "cache", "array"
     |
     */
 

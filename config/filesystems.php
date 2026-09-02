@@ -41,9 +41,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            // Root-relative URLs work on any host/port (localhost vs 127.0.0.1, Vite, etc.).
-            // Set PUBLIC_DISK_URL to a full URL when you need absolute links (CDN, emails).
-            'url' => env('PUBLIC_DISK_URL', '/storage'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

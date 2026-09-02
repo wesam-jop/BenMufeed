@@ -5,24 +5,9 @@ namespace App\Enums;
 enum InvoiceStatus: string
 {
     case Draft = 'draft';
-    case Confirmed = 'confirmed';
-    case Cancelled = 'cancelled';
-
-    public function label(): string
-    {
-        return match ($this) {
-            self::Draft => 'مسودة',
-            self::Confirmed => 'مؤكدة',
-            self::Cancelled => 'ملغاة',
-        };
-    }
-
-    public function color(): string
-    {
-        return match ($this) {
-            self::Draft => 'gray',
-            self::Confirmed => 'success',
-            self::Cancelled => 'danger',
-        };
-    }
+    case Issued = 'issued';
+    case Paid = 'paid';
+    case Partial = 'partial';
+    case Void = 'void';
+    case Overdue = 'overdue';
 }

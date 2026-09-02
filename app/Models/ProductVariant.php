@@ -11,21 +11,21 @@ class ProductVariant extends Model
     protected $fillable = [
         'product_id',
         'name',
-        'price',
-        'cost',
+        'sku',
+        'barcode',
+        'sale_price',
+        'cost_price',
         'is_default',
         'sort_order',
-        'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
-            'cost' => 'decimal:2',
+            'sale_price' => 'decimal:2',
+            'cost_price' => 'decimal:4',
             'is_default' => 'boolean',
             'sort_order' => 'integer',
-            'is_active' => 'boolean',
         ];
     }
 
@@ -34,28 +34,18 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function recipeItems(): HasMany
+    public function recipes(): HasMany
     {
-        return $this->hasMany(ProductVariantRecipeItem::class);
+        return $this->hasMany(Recipe::class, 'variant_id');
     }
 
-    public function unitCost(): float
+    public function orderItems(): HasMany
     {
-        if ($this->cost !== null) {
-            return (float) $this->cost;
-        }
-
-        $this->loadMissing('recipeItems.material');
-
-        if ($this->recipeItems->isNotEmpty()) {
-            return round($this->recipeItems->sum(fn (ProductVariantRecipeItem $item) => $item->lineCost()), 2);
-        }
-
-        return $this->product?->recipeCost() ?? 0.0;
+        return $this->hasMany(OrderItem::class, 'variant_id');
     }
 
-    public function recipeCost(): float
+    public function invoiceItems(): HasMany
     {
-        return $this->unitCost();
+        return $this->hasMany(InvoiceItem::class, 'variant_id');
     }
 }

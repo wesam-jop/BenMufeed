@@ -4,31 +4,35 @@ namespace App\Policies;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Policies\Concerns\ChecksPermissions;
+use Illuminate\Database\Eloquent\Model;
 
 class OrderPolicy
 {
-    public function viewAny(User $user): bool
+    use ChecksPermissions;
+
+    protected function permissionPrefix(): string
     {
-        return $user->is_admin;
+        return 'orders';
     }
 
-    public function view(User $user, Order $order): bool
+    public function acceptDelivery(User $user, Order $order): bool
     {
-        return $user->is_admin;
+        return $this->allows($user, 'accept_delivery');
     }
 
-    public function create(User $user): bool
+    public function rejectDelivery(User $user, Order $order): bool
     {
-        return false;
+        return $this->allows($user, 'reject_delivery');
     }
 
-    public function update(User $user, Order $order): bool
+    public function acceptTable(User $user, Order $order): bool
     {
-        return $user->is_admin;
+        return $this->allows($user, 'accept_table');
     }
 
-    public function delete(User $user, Order $order): bool
+    public function rejectTable(User $user, Order $order): bool
     {
-        return $user->is_admin;
+        return $this->allows($user, 'reject_table');
     }
 }

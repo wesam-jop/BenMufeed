@@ -2,14 +2,25 @@
 
 namespace App\Providers;
 
-use App\Services\WebsiteOrderWorkflowService;
-use App\Support\StorefrontCache;
-use App\Support\StorefrontSeo;
-use App\Listeners\InvalidateRestaurantMetrics;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Vite;
+use App\Admin\AccountingReport;
+use App\Admin\Dashboard;
+use App\Admin\Report;
+use App\Admin\Settings;
+use App\Models\StockMovement;
+use App\Models\User;
+use App\Policies\AccountingReportPolicy;
+use App\Policies\DashboardPolicy;
+use App\Policies\ReportPolicy;
+use App\Policies\RolePolicy;
+use App\Policies\SettingsPolicy;
+use App\Policies\StockPolicy;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,31 +29,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(
-            \Filament\Auth\Http\Responses\Contracts\LogoutResponse::class,
-            \App\Http\Auth\AppFilamentLogoutResponse::class,
-        );
-
-        $this->app->bind(
-            \App\Repositories\Contracts\CategoryRepositoryInterface::class,
-            \App\Repositories\CategoryRepository::class
-        );
-        $this->app->bind(
-            \App\Repositories\Contracts\ProductRepositoryInterface::class,
-            \App\Repositories\ProductRepository::class
-        );
-        $this->app->bind(
-            \App\Repositories\Contracts\OrderRepositoryInterface::class,
-            \App\Repositories\OrderRepository::class
-        );
-        $this->app->bind(
-            \App\Repositories\Contracts\SiteSettingRepositoryInterface::class,
-            \App\Repositories\SiteSettingRepository::class
-        );
-        $this->app->bind(
-            \App\Repositories\Contracts\HomeSliderRepositoryInterface::class,
-            \App\Repositories\HomeSliderRepository::class
-        );
+        //
     }
 
     /**
@@ -50,27 +37,68 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Event::subscribe(InvalidateRestaurantMetrics::class);
+        $this->loadDomainMigrations();
+        $this->configureDefaults();
+        $this->configureAuthorization();
+    }
 
-        Vite::prefetch(concurrency: 3);
+    protected function loadDomainMigrations(): void
+    {
+        $domains = [
+            '01_core',
+            '02_organization',
+            '03_customers',
+            '04_catalog',
+            '05_inventory',
+            '06_purchasing',
+            '07_sales',
+            '08_manufacturing',
+            '09_accounting',
+            '10_cms',
+        ];
 
-        View::composer('app', function ($view): void {
-            $logoUrl = StorefrontCache::sharedSite()['logo_url'] ?? null;
+        foreach ($domains as $domain) {
+            $this->loadMigrationsFrom(database_path("migrations/{$domain}"));
+        }
+    }
 
-            $view->with(
-                'siteLogoUrl',
-                is_string($logoUrl) && $logoUrl !== '' ? StorefrontSeo::absoluteUrl($logoUrl) : null,
-            );
+    protected function configureAuthorization(): void
+    {
+        Gate::policy(Dashboard::class, DashboardPolicy::class);
+        Gate::policy(AccountingReport::class, AccountingReportPolicy::class);
+        Gate::policy(Report::class, ReportPolicy::class);
+        Gate::policy(Settings::class, SettingsPolicy::class);
+        Gate::policy(StockMovement::class, StockPolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
+
+        Gate::before(function (?User $user): ?bool {
+            if ($user?->is_super_admin) {
+                return true;
+            }
+
+            return null;
         });
+    }
 
-        View::composer('components.pos.header', function ($view): void {
-            $user = auth()->user();
-            $view->with(
-                'pendingWebsiteCount',
-                ($user !== null && $user->canAccessPos())
-                    ? app(WebsiteOrderWorkflowService::class)->pendingWebsiteOrdersCount()
-                    : 0,
-            );
-        });
+    /**
+     * Configure default behaviors for production-ready applications.
+     */
+    protected function configureDefaults(): void
+    {
+        Date::use(CarbonImmutable::class);
+
+        DB::prohibitDestructiveCommands(
+            app()->isProduction(),
+        );
+
+        Password::defaults(fn (): ?Password => app()->isProduction()
+            ? Password::min(12)
+                ->mixedCase()
+                ->letters()
+                ->numbers()
+                ->symbols()
+                ->uncompromised()
+            : null,
+        );
     }
 }

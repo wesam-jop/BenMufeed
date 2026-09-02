@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
+    | as Resend, Postmark, AWS, and more. This file provides the de facto
     | location for this type of information, allowing packages to have
     | a conventional file to locate the various service credentials.
     |
@@ -35,18 +35,9 @@ return [
         ],
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Mirsalli WhatsApp (إرسال رسائل تلقائية)
-    |--------------------------------------------------------------------------
-    */
-    'mirsalli' => [
-        'base_url' => env('MIRSALLI_BASE_URL', 'https://mirsalli.com/myapp'),
-        'send_path' => env('MIRSALLI_SEND_PATH', 'sendtextmsg.php'),
-        'user' => env('MIRSALLI_USER'),
-        'device' => env('MIRSALLI_DEVICE'),
-        'timeout' => (int) env('MIRSALLI_TIMEOUT', 15),
-        'retries' => (int) env('MIRSALLI_RETRIES', 2),
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
 ];

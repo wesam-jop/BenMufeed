@@ -2,190 +2,114 @@
 
 namespace App\Models;
 
-use App\Enums\ProductStatus;
-use App\Support\ProductMetadataGenerator;
-use App\Support\SeoText;
-use Illuminate\Database\Eloquent\Builder;
+use App\Enums\ProductType;
+use App\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Laravel\Scout\Searchable;
-use Spatie\Image\Enums\Fit;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
-class Product extends Model implements HasMedia
+class Product extends Model
 {
-    use InteractsWithMedia;
-    use Searchable;
+    use BelongsToBranch, SoftDeletes;
 
     protected $fillable = [
+        'branch_id',
         'category_id',
+        'type',
         'name',
-        'slug',
-        'short_description',
+        'sku',
+        'barcode',
         'description',
-        'price',
-        'compare_at_price',
-        'is_featured',
-        'is_delivery_available',
-        'status',
-        'seo_title',
-        'seo_description',
-        'seo_focus_keywords',
+        'image',
+        'unit_id',
+        'tax_rate_id',
+        'sale_price',
+        'cost_price',
+        'track_stock',
+        'allow_negative_stock',
+        'is_active',
+        'min_stock',
+        'max_stock',
     ];
 
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
-            'compare_at_price' => 'decimal:2',
-            'is_featured' => 'boolean',
-            'is_delivery_available' => 'boolean',
-            'status' => ProductStatus::class,
+            'type' => ProductType::class,
+            'sale_price' => 'decimal:2',
+            'cost_price' => 'decimal:4',
+            'track_stock' => 'boolean',
+            'allow_negative_stock' => 'boolean',
+            'is_active' => 'boolean',
+            'min_stock' => 'decimal:4',
+            'max_stock' => 'decimal:4',
         ];
     }
 
-    public function registerMediaCollections(): void
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute(): ?string
     {
-        $this->addMediaCollection('images')
-            ->useDisk(config('media-library.disk_name'));
-    }
-
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->fit(Fit::Contain, 480, 480)
-            ->format('webp')
-            ->quality(85)
-            ->performOnCollections('images')
-            ->nonQueued();
-
-        $this->addMediaConversion('large')
-            ->fit(Fit::Contain, 1200, 1200)
-            ->format('webp')
-            ->quality(88)
-            ->performOnCollections('images')
-            ->nonQueued();
-    }
-
-    public function primaryImageUrl(): ?string
-    {
-        $url = $this->getFirstMediaUrl('images', 'thumb');
-
-        return $url !== '' ? $url : ($this->getFirstMediaUrl('images') ?: null);
-    }
-
-    public function socialImageUrl(): ?string
-    {
-        $url = $this->getFirstMediaUrl('images', 'large');
-
-        return $url !== '' ? $url : $this->primaryImageUrl();
+        return $this->image ? Storage::url($this->image) : null;
     }
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(ProductCategory::class, 'category_id');
     }
 
-    public function orderItems(): HasMany
+    public function unit(): BelongsTo
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->belongsTo(Unit::class);
     }
 
-    public function recipeItems(): HasMany
+    public function taxRate(): BelongsTo
     {
-        return $this->hasMany(ProductRecipeItem::class);
+        return $this->belongsTo(TaxRate::class);
     }
 
     public function variants(): HasMany
     {
-        return $this->hasMany(ProductVariant::class)->orderBy('sort_order')->orderBy('id');
+        return $this->hasMany(ProductVariant::class);
     }
 
-    public function activeVariants(): HasMany
+    public function modifierGroups(): BelongsToMany
     {
-        return $this->variants()->where('is_active', true);
+        return $this->belongsToMany(ModifierGroup::class, 'product_modifier_groups')
+            ->using(ProductModifierGroup::class);
     }
 
-    public function addons(): HasMany
+    public function recipes(): HasMany
     {
-        return $this->hasMany(ProductAddon::class)->orderBy('sort_order')->orderBy('id');
+        return $this->hasMany(Recipe::class);
     }
 
-    public function activeAddons(): HasMany
+    public function recipeItemsAsIngredient(): HasMany
     {
-        return $this->addons()->where('is_active', true);
+        return $this->hasMany(RecipeItem::class, 'ingredient_product_id');
     }
 
-    public function hasOptions(): bool
+    public function stockBatches(): HasMany
     {
-        $this->loadCount(['activeVariants', 'activeAddons']);
-
-        return ($this->active_variants_count ?? 0) > 0 || ($this->active_addons_count ?? 0) > 0;
+        return $this->hasMany(StockBatch::class);
     }
 
-    public function startingPrice(): float
+    public function stockMovements(): HasMany
     {
-        $this->loadMissing('activeVariants');
-
-        if ($this->activeVariants->isNotEmpty()) {
-            return (float) $this->activeVariants->min('price');
-        }
-
-        return (float) $this->price;
+        return $this->hasMany(StockMovement::class);
     }
 
-    public function recipeCost(): float
+    public function stockBalances(): HasMany
     {
-        $this->loadMissing('recipeItems.material');
-
-        return round(
-            $this->recipeItems->sum(fn (ProductRecipeItem $item) => $item->lineCost()),
-            2,
-        );
+        return $this->hasMany(StockBalance::class);
     }
 
-    public function scopePublished(Builder $query): Builder
+    public function favoritedByCustomers(): BelongsToMany
     {
-        return $query->where('status', ProductStatus::Published);
-    }
-
-    protected static function booted(): void
-    {
-        static::saving(function (Product $product): void {
-            ProductMetadataGenerator::apply($product);
-        });
-
-        static::saved(function (): void {
-            \App\Support\PosCatalogCache::forget();
-            \App\Support\StorefrontCache::forgetNavigation();
-        });
-        static::deleted(function (): void {
-            \App\Support\PosCatalogCache::forget();
-            \App\Support\StorefrontCache::forgetNavigation();
-        });
-    }
-
-    public function toSearchableArray(): array
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'slug' => $this->slug,
-            'short_description' => $this->short_description,
-            'description' => SeoText::plainText($this->description),
-            'category_id' => $this->category_id,
-            'category_name' => $this->category?->name,
-            'price' => (float) $this->price,
-            'is_featured' => $this->is_featured,
-            'is_delivery_available' => (bool) $this->is_delivery_available,
-        ];
-    }
-
-    public function shouldBeSearchable(): bool
-    {
-        return $this->status === ProductStatus::Published;
+        return $this->belongsToMany(Customer::class, 'customer_favorites')
+            ->using(CustomerFavorite::class);
     }
 }
