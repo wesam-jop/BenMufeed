@@ -14,7 +14,7 @@ class StorefrontContactTest extends TestCase
     {
         $this->get(route('storefront.contact'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('storefront/contact'));
+            ->assertInertia(fn ($page) => $page->component('storefront/cms-page'));
     }
 
     public function test_contact_page_exposes_social_channels(): void
@@ -30,7 +30,7 @@ class StorefrontContactTest extends TestCase
         $this->get(route('storefront.contact'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('storefront/contact')
+                ->component('storefront/cms-page')
                 ->where('business.whatsapp', '966501234567')
                 ->where('business.facebook', 'kashercafe')
                 ->where('business.instagram', '@kasher')

@@ -7,10 +7,10 @@ export type MoneyConfig = {
 };
 
 let moneyConfig: MoneyConfig = {
-    code: 'SAR',
-    name: 'ريال سعودي',
-    symbol: 'ر.س',
-    symbol_position: 'after',
+    code: 'USD',
+    name: 'دولار أمريكي',
+    symbol: '$',
+    symbol_position: 'before',
     decimal_places: 2,
 };
 

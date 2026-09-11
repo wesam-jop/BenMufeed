@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class AdminSeeder extends Seeder
 {
@@ -16,8 +17,8 @@ class AdminSeeder extends Seeder
         $admin = User::query()->updateOrCreate(
             ['username' => 'admin'],
             [
-                'name' => 'Super Admin',
-                'email' => 'admin@kasher.local',
+                'name' => 'مدير النظام',
+                'email' => 'admin@benmufeed.local',
                 'password' => 'password',
                 'branch_id' => $branch?->id,
                 'is_super_admin' => true,
@@ -28,7 +29,7 @@ class AdminSeeder extends Seeder
 
         $admin->syncPermissions(Permission::query()->where('guard_name', 'web')->pluck('name'));
 
-        $adminRole = \Spatie\Permission\Models\Role::query()
+        $adminRole = Role::query()
             ->where('name', 'admin')
             ->where('guard_name', 'web')
             ->first();

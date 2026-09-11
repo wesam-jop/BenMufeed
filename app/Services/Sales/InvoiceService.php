@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\Shared\NumberGeneratorService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 

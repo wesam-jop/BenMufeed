@@ -12,6 +12,7 @@ use App\Models\OrderItem;
 use App\Models\OrderOtpVerification;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\Shared\NumberGeneratorService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;

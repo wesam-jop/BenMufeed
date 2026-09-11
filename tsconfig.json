@@ -126,6 +126,7 @@
             "@/hooks/*": ["./resources/js/shared/hooks/*"],
             "@/lib/*": ["./resources/js/shared/lib/*"],
             "@/types/*": ["./resources/js/shared/types/*"],
+            "@/types": ["./resources/js/shared/types/index.ts"],
             "@/modules/*": ["./resources/js/modules/*"],
             "@/shared/*": ["./resources/js/shared/*"],
             "@/*": ["./resources/js/*"]

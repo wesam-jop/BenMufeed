@@ -20,6 +20,7 @@ import {
     Truck,
     Users,
     Warehouse,
+    ArrowLeftRight,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import AppLogo from '@/components/app-logo';
@@ -120,6 +121,7 @@ const navGroupDefs: NavGroupDef[] = [
             { titleKey: 'admin.nav.cash_registers', href: '/admin/cash-registers', icon: CreditCard },
             { titleKey: 'admin.nav.cash_sessions', href: '/admin/cash-register-sessions', icon: CreditCard },
             { titleKey: 'admin.nav.expenses', href: '/admin/expenses', icon: Receipt },
+            { titleKey: 'admin.nav.exchange', href: '/admin/settings/currencies', icon: ArrowLeftRight },
         ],
     },
     {

@@ -29,7 +29,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind('inertia.view-finder', function ($app) {
+            return new \App\Support\InertiaModuleViewFinder(
+                $app['files'],
+                $app['config']->get('inertia.pages.paths'),
+                $app['config']->get('inertia.pages.extensions'),
+            );
+        });
     }
 
     /**

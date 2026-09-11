@@ -98,30 +98,30 @@ export default function CurrenciesSettingsPage({ currencies, primary, summary }:
 
     return (
         <>
-            <Head title="العملات والصرف" />
+            <Head title="التصريف" />
             <PageHeader
-                title="العملات والصرف"
-                description="حدد العملة الرئيسية وشكلها، وأضف عملات أخرى مع سعر صرفها لطباعة الفواتير"
+                title="التصريف"
+                description="العملة الرئيسية دولار ($). عدّل أسعار التركي والسوري لتظهر الثلاث عملات على فاتورة البيع"
             />
 
             <div className="mb-6 grid gap-4 sm:grid-cols-3">
                 <StatCard title="العملة الرئيسية" value={primary.code} format="text" icon={Star} description={primary.name} />
                 <StatCard title="العملات" value={summary.total} format="number" icon={Coins} description={`${summary.active} نشطة`} />
                 <StatCard
-                    title="على الفاتورة المطبوعة"
+                    title="تصريف على الفاتورة"
                     value={summary.on_receipt}
                     format="number"
                     icon={Coins}
-                    description="عملات تظهر كتصريف"
+                    description="تركي + سوري يظهران مع الدولار"
                 />
             </div>
 
             <div className="mb-6 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-sm text-amber-950">
-                <p className="font-medium">كيف يعمل سعر الصرف؟</p>
+                <p className="font-medium">كيف يعمل التصريف؟</p>
                 <p className="mt-1 text-amber-900/80">
-                    أدخل كم تساوي <strong>وحدة واحدة</strong> من العملة الأجنبية بالنسبة للعملة الرئيسية.
-                    مثال: إذا الرئيسية ر.س والدولار = 3.75 ر.س، ضع السعر <span dir="ltr">3.75</span>.
-                    الفاتورة تعرض الإجمالي بالرئيسية + التصريف بالعملات المفعّلة للطباعة.
+                    كل الأسعار بالدولار. عند طباعة الفاتورة يظهر الإجمالي بالدولار + ما يعادله بالتركي والسوري.
+                    أدخل هنا: <strong>كم يساوي 1 دولار</strong> من هذه العملة.
+                    مثال: إذا الدولار = 12٬500 ل.س، ضع <span dir="ltr">12500</span> لليرة السورية.
                 </p>
             </div>
 
@@ -153,7 +153,7 @@ export default function CurrenciesSettingsPage({ currencies, primary, summary }:
                                         <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
                                             مثال: {currency.example}
                                             {!currency.is_primary && (
-                                                <> · 1 {currency.code} = {currency.rate_to_primary} {primary.code}</>
+                                                <> · 1 {primary.code} = {currency.rate_to_primary} {currency.code}</>
                                             )}
                                         </p>
                                     </div>
@@ -323,18 +323,19 @@ function CurrencyFields({
                 />
             </div>
             <div className="grid gap-2">
-                <Label>سعر الصرف مقابل {primaryCode}</Label>
+                <Label>سعر التصريف: 1 {primaryCode} = ؟</Label>
                 <Input
                     type="number"
-                    step="0.000001"
+                    step="any"
                     min={0}
                     value={data.rate_to_primary}
                     onChange={(e) => setData('rate_to_primary', Number(e.target.value) as never)}
                     disabled={isPrimary}
                     dir="ltr"
+                    placeholder="مثلاً 12500"
                 />
                 <p className="text-xs text-muted-foreground">
-                    1 من هذه العملة = ؟ {primaryCode}
+                    كم يساوي دولار واحد بهذه العملة
                 </p>
                 <InputError message={errors.rate_to_primary} />
             </div>

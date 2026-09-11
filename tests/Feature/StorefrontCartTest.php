@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Product;
+use Database\Seeders\CatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -27,7 +28,14 @@ class StorefrontCartTest extends TestCase
 
     protected function addProductToCart(): Product
     {
-        $this->seed();
+        $this->seed([
+            \Database\Seeders\PermissionSeeder::class,
+            \Database\Seeders\RoleSeeder::class,
+            \Database\Seeders\BranchSeeder::class,
+            \Database\Seeders\UnitSeeder::class,
+            \Database\Seeders\TaxRateSeeder::class,
+            CatalogSeeder::class,
+        ]);
 
         $product = Product::query()->where('sku', 'MENU-LATTE')->first();
         $this->assertNotNull($product);

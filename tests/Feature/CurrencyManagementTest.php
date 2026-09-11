@@ -35,12 +35,12 @@ class CurrencyManagementTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('admin.settings.currencies.store'), [
-                'code' => 'SYP',
-                'name' => 'ليرة سورية',
-                'symbol' => 'ل.س',
-                'symbol_position' => 'after',
-                'decimal_places' => 0,
-                'rate_to_primary' => 0.0004,
+                'code' => 'GBP',
+                'name' => 'جنيه إسترليني',
+                'symbol' => '£',
+                'symbol_position' => 'before',
+                'decimal_places' => 2,
+                'rate_to_primary' => 1.27,
                 'show_on_receipt' => true,
                 'is_active' => true,
             ])
@@ -48,7 +48,7 @@ class CurrencyManagementTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('currencies', [
-            'code' => 'SYP',
+            'code' => 'GBP',
             'show_on_receipt' => 1,
         ]);
     }
@@ -58,26 +58,30 @@ class CurrencyManagementTest extends TestCase
         $this->adminUser();
 
         $service = app(CurrencyService::class);
-        $rows = $service->convertForReceipt(375.0);
+        $rows = $service->convertForReceipt(100.0);
 
-        $usd = collect($rows)->firstWhere('code', 'USD');
-        $this->assertNotNull($usd);
-        $this->assertEquals(100.0, $usd['amount']);
+        $try = collect($rows)->firstWhere('code', 'TRY');
+        $this->assertNotNull($try);
+        $this->assertEqualsWithDelta(3450.0, $try['amount'], 0.01);
+
+        $syp = collect($rows)->firstWhere('code', 'SYP');
+        $this->assertNotNull($syp);
+        $this->assertEquals(1250000, $syp['amount']);
     }
 
     public function test_can_switch_primary_currency(): void
     {
         $user = $this->adminUser();
-        $usd = Currency::query()->where('code', 'USD')->firstOrFail();
+        $try = Currency::query()->where('code', 'TRY')->firstOrFail();
 
         $this->actingAs($user)
-            ->post(route('admin.settings.currencies.make-primary', $usd))
+            ->post(route('admin.settings.currencies.make-primary', $try))
             ->assertRedirect()
             ->assertSessionHasNoErrors();
 
-        $this->assertTrue((bool) $usd->fresh()->is_primary);
-        $this->assertFalse((bool) Currency::query()->where('code', 'SAR')->firstOrFail()->is_primary);
-        $this->assertSame('USD', app(CurrencyService::class)->primary()->code);
+        $this->assertTrue((bool) $try->fresh()->is_primary);
+        $this->assertFalse((bool) Currency::query()->where('code', 'USD')->firstOrFail()->is_primary);
+        $this->assertSame('TRY', app(CurrencyService::class)->primary()->code);
     }
 
     private function adminUser(): User

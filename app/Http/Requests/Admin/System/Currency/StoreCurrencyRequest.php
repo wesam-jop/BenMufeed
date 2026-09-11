@@ -39,7 +39,7 @@ class StoreCurrencyRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'rate_to_primary.gt' => 'سعر الصرف يجب أن يكون أكبر من صفر.',
+            'rate_to_primary.gt' => 'سعر التصريف يجب أن يكون أكبر من صفر.',
             'code.unique' => 'رمز العملة مستخدم مسبقاً.',
         ];
     }

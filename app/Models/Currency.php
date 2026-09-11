@@ -44,7 +44,9 @@ class Currency extends Model
             return 0.0;
         }
 
-        return round($amountInPrimary / $rate, (int) $this->decimal_places);
+        // rate_to_primary = كم تساوي وحدة واحدة من العملة الرئيسية بهذه العملة
+        // مثال: 1 USD = 12500 SYP → المبلغ بالسوري = المبلغ بالدولار × 12500
+        return round($amountInPrimary * $rate, (int) $this->decimal_places);
     }
 
     public function format(float $amount): string

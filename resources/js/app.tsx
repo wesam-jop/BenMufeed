@@ -9,6 +9,7 @@ import RootProviders from '@/layouts/root-providers';
 import SettingsLayout from '@/layouts/settings/layout';
 import { setMoneyConfig, type MoneyConfig } from '@/lib/format';
 import type { ComponentType, ReactNode } from 'react';
+import '../css/app.css';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -43,6 +44,7 @@ createInertiaApp({
     // Pages live under modules/{area}/pages — keep Inertia names like admin/products/index
     pages: {
         path: './modules',
+        lazy: false,
         transform: (name: string) => {
             const areas = [
                 'admin',

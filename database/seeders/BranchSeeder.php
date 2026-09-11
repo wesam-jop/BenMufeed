@@ -12,12 +12,12 @@ class BranchSeeder extends Seeder
         Branch::query()->firstOrCreate(
             ['code' => 'MAIN'],
             [
-                'name' => 'الفرع الرئيسي',
-                'address' => 'الرياض، المملكة العربية السعودية',
-                'phone' => '+966500000000',
-                'email' => 'info@kasher.local',
-                'timezone' => 'Asia/Riyadh',
-                'currency' => 'SAR',
+                'name' => 'بن مفيد — الفرع الرئيسي',
+                'address' => 'دمشق، سوريا',
+                'phone' => '+963985605918',
+                'email' => 'info@benmufeed.com',
+                'timezone' => 'Asia/Damascus',
+                'currency' => 'USD',
                 'is_active' => true,
             ],
         );

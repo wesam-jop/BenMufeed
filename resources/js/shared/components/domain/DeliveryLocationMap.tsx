@@ -1,22 +1,18 @@
-import L from 'leaflet';
 import { MapPin } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import 'leaflet/dist/leaflet.css';
 
-const DEFAULT_CENTER: [number, number] = [24.7136, 46.6753];
+const DEFAULT_CENTER: [number, number] = [33.5138, 36.2765];
 
-const markerIcon = L.icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-});
+type LeafletModules = {
+    MapContainer: ComponentType<Record<string, unknown>>;
+    TileLayer: ComponentType<Record<string, unknown>>;
+    Marker: ComponentType<Record<string, unknown>>;
+    useMap: (hook: () => void) => void;
+    useMapEvents: (handlers: { click?: (e: { latlng: { lat: number; lng: number } }) => void }) => void;
+    markerIcon: unknown;
+};
 
 type DeliveryLocationMapProps = {
     lat?: number | string | null;
@@ -24,30 +20,6 @@ type DeliveryLocationMapProps = {
     onLocationChange: (lat: number, lng: number, address?: string) => void;
     hint?: string;
 };
-
-function MapClickHandler({
-    onSelect,
-}: {
-    onSelect: (lat: number, lng: number) => void;
-}) {
-    useMapEvents({
-        click(e) {
-            onSelect(e.latlng.lat, e.latlng.lng);
-        },
-    });
-
-    return null;
-}
-
-function MapRecenter({ center }: { center: [number, number] }) {
-    const map = useMap();
-
-    useEffect(() => {
-        map.setView(center, map.getZoom(), { animate: true });
-    }, [center, map]);
-
-    return null;
-}
 
 async function reverseGeocode(lat: number, lng: number): Promise<string | undefined> {
     try {
@@ -73,18 +45,132 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | undefi
     }
 }
 
+function InteractiveMap({
+    modules,
+    mapCenter,
+    hasMarker,
+    markerPosition,
+    onSelect,
+    locating,
+    resolving,
+}: {
+    modules: LeafletModules;
+    mapCenter: [number, number];
+    hasMarker: boolean;
+    markerPosition: [number, number] | null;
+    onSelect: (lat: number, lng: number) => void;
+    locating: boolean;
+    resolving: boolean;
+}) {
+    const { MapContainer, TileLayer, Marker, useMap, useMapEvents, markerIcon } = modules;
+
+    function MapClickHandler() {
+        useMapEvents({
+            click(e) {
+                onSelect(e.latlng.lat, e.latlng.lng);
+            },
+        });
+
+        return null;
+    }
+
+    function MapRecenter({ center }: { center: [number, number] }) {
+        const map = useMap();
+
+        useEffect(() => {
+            map.setView(center, map.getZoom(), { animate: true });
+        }, [center, map]);
+
+        return null;
+    }
+
+    return (
+        <div className="relative overflow-hidden rounded-xl border border-amber-100">
+            <MapContainer
+                center={mapCenter}
+                zoom={hasMarker ? 16 : 12}
+                className="z-0 h-[320px] w-full"
+                scrollWheelZoom
+            >
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <MapClickHandler />
+                {markerPosition && (
+                    <>
+                        <Marker
+                            position={markerPosition}
+                            icon={markerIcon}
+                            draggable
+                            eventHandlers={{
+                                dragend: (e: { target: { getLatLng: () => { lat: number; lng: number } } }) => {
+                                    const { lat, lng } = e.target.getLatLng();
+                                    onSelect(lat, lng);
+                                },
+                            }}
+                        />
+                        <MapRecenter center={markerPosition} />
+                    </>
+                )}
+            </MapContainer>
+
+            {(locating || resolving) && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+                    <Spinner className="size-8 text-amber-800" />
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function DeliveryLocationMap({
     lat,
     lng,
     onLocationChange,
     hint = 'اضغط على الخريطة أو اسحب الدبوس لتحديد موقع التوصيل',
 }: DeliveryLocationMapProps) {
-    const [mounted, setMounted] = useState(false);
+    const [modules, setModules] = useState<LeafletModules | null>(null);
     const [locating, setLocating] = useState(false);
     const [resolving, setResolving] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        let cancelled = false;
+
+        void (async () => {
+            const [reactLeaflet, L] = await Promise.all([
+                import('react-leaflet'),
+                import('leaflet'),
+                import('leaflet/dist/leaflet.css'),
+            ]);
+
+            if (cancelled) {
+                return;
+            }
+
+            const markerIcon = L.default.icon({
+                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41],
+            });
+
+            setModules({
+                MapContainer: reactLeaflet.MapContainer as ComponentType<Record<string, unknown>>,
+                TileLayer: reactLeaflet.TileLayer as ComponentType<Record<string, unknown>>,
+                Marker: reactLeaflet.Marker as ComponentType<Record<string, unknown>>,
+                useMap: reactLeaflet.useMap,
+                useMapEvents: reactLeaflet.useMapEvents,
+                markerIcon,
+            });
+        })();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const parsedLat = lat !== '' && lat != null ? Number(lat) : null;
@@ -117,7 +203,7 @@ export default function DeliveryLocationMap({
     );
 
     const detectCurrentLocation = () => {
-        if (!navigator.geolocation) {
+        if (typeof navigator === 'undefined' || !navigator.geolocation) {
             return;
         }
 
@@ -134,48 +220,21 @@ export default function DeliveryLocationMap({
 
     return (
         <div className="space-y-3">
-            <div className="relative overflow-hidden rounded-xl border border-amber-100">
-                {!mounted ? (
-                    <div className="flex h-[320px] items-center justify-center bg-muted">
-                        <Spinner className="size-8 text-amber-800" />
-                    </div>
-                ) : (
-                    <MapContainer
-                    center={mapCenter}
-                    zoom={hasMarker ? 16 : 12}
-                    className="z-0 h-[320px] w-full"
-                    scrollWheelZoom
-                >
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <MapClickHandler onSelect={selectLocation} />
-                    {markerPosition && (
-                        <>
-                            <Marker
-                                position={markerPosition}
-                                icon={markerIcon}
-                                draggable
-                                eventHandlers={{
-                                    dragend: (e) => {
-                                        const { lat: newLat, lng: newLng } = e.target.getLatLng();
-                                        void selectLocation(newLat, newLng);
-                                    },
-                                }}
-                            />
-                            <MapRecenter center={markerPosition} />
-                        </>
-                    )}
-                </MapContainer>
-                )}
-
-                {(locating || resolving) && mounted && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
-                        <Spinner className="size-8 text-amber-800" />
-                    </div>
-                )}
-            </div>
+            {!modules ? (
+                <div className="flex h-[320px] items-center justify-center rounded-xl border border-amber-100 bg-muted">
+                    <Spinner className="size-8 text-amber-800" />
+                </div>
+            ) : (
+                <InteractiveMap
+                    modules={modules}
+                    mapCenter={mapCenter}
+                    hasMarker={hasMarker}
+                    markerPosition={markerPosition}
+                    onSelect={selectLocation}
+                    locating={locating}
+                    resolving={resolving}
+                />
+            )}
 
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-muted-foreground">
@@ -186,7 +245,7 @@ export default function DeliveryLocationMap({
                     variant="outline"
                     size="sm"
                     onClick={detectCurrentLocation}
-                    disabled={locating || resolving}
+                    disabled={locating || resolving || !modules}
                 >
                     موقعي الحالي
                 </Button>

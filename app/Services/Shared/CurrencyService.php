@@ -17,11 +17,11 @@ class CurrencyService
         }
 
         return Currency::query()->firstOrCreate(
-            ['code' => 'SAR'],
+            ['code' => 'USD'],
             [
-                'name' => 'ريال سعودي',
-                'symbol' => 'ر.س',
-                'symbol_position' => 'after',
+                'name' => 'دولار أمريكي',
+                'symbol' => '$',
+                'symbol_position' => 'before',
                 'decimal_places' => 2,
                 'rate_to_primary' => 1,
                 'is_primary' => true,
@@ -123,12 +123,14 @@ class CurrencyService
     {
         Currency::query()->where('is_primary', true)->update(['is_primary' => false]);
 
-        $currency->update([
+        Currency::query()->whereKey($currency->getKey())->update([
             'is_primary' => true,
             'rate_to_primary' => 1,
             'is_active' => true,
             'show_on_receipt' => false,
         ]);
+
+        $currency->refresh();
 
         $this->syncBranchCurrency($currency->code);
         $this->forgetCache();
